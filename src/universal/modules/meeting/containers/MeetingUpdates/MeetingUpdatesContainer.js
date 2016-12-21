@@ -10,11 +10,10 @@ query {
   projects(teamMemberId: $teamMemberId) @live {
     content
     id
+    sortOrder
     status
     teamMemberId
     updatedAt
-    userSort
-    teamSort
   }
 }
 `;
@@ -23,12 +22,12 @@ const mutationHandlers = {
   updateProject(optimisticUpdates, queryResponse, currentResponse) {
     if (optimisticUpdates) {
       const {updatedProject} = optimisticUpdates;
-      if (updatedProject && updatedProject.hasOwnProperty('teamSort')) {
-        const {id, teamSort, status} = updatedProject;
+      if (updatedProject && updatedProject.hasOwnProperty('sortOrder')) {
+        const {id, sortOrder, status} = updatedProject;
         const {projects} = currentResponse;
         const fromProject = projects.find((project) => project.id === id);
-        if (teamSort !== undefined) {
-          fromProject.teamSort = teamSort;
+        if (sortOrder !== undefined) {
+          fromProject.sortOrder = sortOrder;
         }
         if (status) {
           fromProject.status = status;
@@ -41,9 +40,9 @@ const mutationHandlers = {
               }
               return arr;
             }, [])
-            .sort((a, b) => b.teamSort - a.teamSort)
+            .sort((a, b) => b.sortOrder - a.sortOrder)
             .forEach((project, idx) => {
-              project.teamSort = idx
+              project.sortOrder = idx
             });
         }
         // no need to sort since the resolveTeamProjects function will do that next
@@ -64,7 +63,7 @@ const mapStateToProps = (state, props) => {
     mutationHandlers,
     variables: {teamMemberId},
   }).data.projects;
-  const projects = makeProjectsByStatus(memberProjects, 'teamSort');
+  const projects = makeProjectsByStatus(memberProjects, 'sortOrder');
   return {
     projects,
     queryKey: teamMemberId

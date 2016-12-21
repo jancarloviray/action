@@ -17,6 +17,7 @@ import {DropTarget as dropTarget} from 'react-dnd';
 import handleColumnHover from 'universal/dnd/handleColumnHover';
 import withDragState from 'universal/dnd/withDragState';
 import AddProjectButton from 'universal/components/AddProjectButton/AddProjectButton';
+import dndNoise from 'universal/utils/dndNoise';
 
 const columnTarget = {
   hover: handleColumnHover
@@ -27,14 +28,13 @@ const badgeIconStyle = {
   lineHeight: '1.5rem',
   width: '1.5rem'
 };
-const handleAddProjectFactory = (status, teamMemberId, teamSort, userSort) => () => {
+const handleAddProjectFactory = (status, teamMemberId, sortOrder) => () => {
   const [, teamId] = teamMemberId.split('::');
   const newProject = {
     id: `${teamId}::${shortid.generate()}`,
     status,
     teamMemberId,
-    teamSort,
-    userSort
+    sortOrder
   };
   cashay.mutate('createProject', {variables: {newProject}});
 };
@@ -43,7 +43,7 @@ const ProjectColumn = (props) => {
   const {area, connectDropTarget, dragState, status, projects, myTeamMemberId, styles, teams, userId} = props;
 
   const label = themeLabels.projectStatus[status].slug;
-  const makeTeamMenuItems = (userSort) => {
+  const makeTeamMenuItems = (sortOrder) => {
     return teams.map(team => ({
       label: team.name,
       isActive: false,
@@ -53,8 +53,7 @@ const ProjectColumn = (props) => {
             id: `${team.id}::${shortid.generate()}`,
             status,
             teamMemberId: `${userId}::${team.id}`,
-            teamSort: 0,
-            userSort
+            sortOrder: sortOrder + dndNoise()
           }
         }
       })
@@ -62,18 +61,18 @@ const ProjectColumn = (props) => {
   };
   const makeAddProject = () => {
     if (area === TEAM_DASH) {
-      const teamSort = getNextSortOrder(projects, 'teamSort');
-      const handleAddProject = handleAddProjectFactory(status, myTeamMemberId, teamSort, 0);
+      const sortOrder = getNextSortOrder(projects, 'sortOrder');
+      const handleAddProject = handleAddProjectFactory(status, myTeamMemberId, sortOrder);
       return <AddProjectButton toggleClickHandler={handleAddProject} toggleLabel={label}/>;
     } else if (area === USER_DASH) {
-      const userSort = getNextSortOrder(projects, 'userSort');
+      const sortOrder = getNextSortOrder(projects, 'sortOrder');
       if (teams.length === 1) {
         const {id: teamId} = teams[0];
         const generatedMyTeamMemberId = `${userId}::${teamId}`;
-        const handleAddProject = handleAddProjectFactory(status, generatedMyTeamMemberId, 0, userSort);
+        const handleAddProject = handleAddProjectFactory(status, generatedMyTeamMemberId, sortOrder);
         return <AddProjectButton toggleClickHandler={handleAddProject} toggleLabel={label}/>;
       }
-      const menuItems = makeTeamMenuItems(userSort);
+      const menuItems = makeTeamMenuItems(sortOrder);
       return (
         <Menu
           menuKey={`UserDashAdd${status}Project`}

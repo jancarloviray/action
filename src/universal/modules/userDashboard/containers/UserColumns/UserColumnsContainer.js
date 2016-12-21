@@ -15,11 +15,10 @@ query {
     projects @live {
       content
       id
+      sortOrder
       status
       teamMemberId
       updatedAt
-      userSort
-      teamSort
     }
   }
 }

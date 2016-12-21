@@ -42,7 +42,7 @@ export default {
       handleSchemaErrors(errors);
 
       // RESOLUTION
-      const {id: projectId, teamSort, userSort, agendaId, isArchived, ...historicalProject} = validUpdatedProject;
+      const {id: projectId, sortOrder, agendaId, isArchived, ...historicalProject} = validUpdatedProject;
 
       const now = new Date();
 
@@ -50,8 +50,7 @@ export default {
         ...historicalProject,
         agendaId,
         isArchived,
-        teamSort,
-        userSort
+        sortOrder
       };
       const {teamMemberId} = historicalProject;
       if (teamMemberId) {
@@ -60,7 +59,7 @@ export default {
       }
       const dbWork = [];
       // if this is just a sort update, don't bother writing to the history
-      if (Object.keys(updatedProject).length === 2 && (teamSort !== undefined || userSort !== undefined)) {
+      if (Object.keys(updatedProject).length === 2 && sortOrder !== undefined) {
         const mergeDoc = {
           ...historicalProject,
           updatedAt: now,
@@ -84,17 +83,16 @@ export default {
         newProject.updatedAt = now;
       }
       if (rebalance) {
-        const rebalanceField = teamSort !== undefined ? 'teamSort' : 'userSort';
         const rebalanceCountPromise = await r.table('Project')
           .getAll(teamId, {index: 'teamId'})
           .filter({status: rebalance})
-          .orderBy(rebalanceField)('id');
+          .orderBy('sortOrder')('id');
         const updates = rebalanceCountPromise.map((id, idx) => ({id, idx}));
         const rebalanceUpdatePromise = r.expr(updates)
           .forEach((update) => {
             return r.table('Project')
               .get(update('id'))
-              .update({[rebalanceField]: update('idx')});
+              .update({sortOrder: update('idx')});
           });
         dbWork.push(rebalanceUpdatePromise);
       }

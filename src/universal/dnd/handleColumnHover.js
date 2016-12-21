@@ -1,6 +1,7 @@
 import {cashay} from 'cashay';
 import {DND_THROTTLE, MEETING, MIN_SORT_RESOLUTION, TEAM_DASH, USER_DASH} from 'universal/utils/constants';
 import checkDragForUpdate from 'universal/dnd/checkDragForUpdate';
+import dndNoise from 'universal/utils/dndNoise';
 
 /**
  * Assuming the whole column is a single drop target, we need to figure out where the drag source should go.
@@ -25,22 +26,23 @@ export default function handleProjectHover(targetProps, monitor) {
   const {area, dragState, projects, queryKey, status: targetStatus} = targetProps;
   const sourceProps = monitor.getItem();
   const {status: sourceStatus} = sourceProps;
-  const sortField = area === USER_DASH ? 'userSort' : 'teamSort';
   if (targetStatus !== sourceStatus) {
     // we don't want the minY and minX to apply if we're hovering over another column
     dragState.handleEndDrag();
   }
-  const updatedVariables = checkDragForUpdate(monitor, dragState, projects, sortField, true);
+  const updatedVariables = checkDragForUpdate(monitor, dragState, projects, 'sortOrder', true);
   if (!updatedVariables) return;
 
   const {prevItem, updatedDoc: updatedProject} = updatedVariables;
+  // make it unique
+  updatedProject.sortOrder += dndNoise();
   const variables = {updatedProject};
 
   if (sourceStatus !== targetStatus) {
     updatedProject.status = targetStatus;
     sourceProps.status = targetStatus;
   }
-  if (prevItem && Math.abs(prevItem[sortField] - updatedProject[sortField]) < MIN_SORT_RESOLUTION) {
+  if (prevItem && Math.abs(prevItem.sortOrder - updatedProject.sortOrder) < MIN_SORT_RESOLUTION) {
     variables.rebalance = targetStatus;
   }
   const op = areaOpLookup[area];

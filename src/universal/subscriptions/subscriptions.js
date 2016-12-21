@@ -185,11 +185,10 @@ export default [
         createdBy
         id
         isArchived
+        sortOrder
         status
         teamMemberId
-        teamSort
         updatedAt
-        userSort
       }
     }`
   },
